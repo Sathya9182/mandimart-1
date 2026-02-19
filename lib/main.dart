@@ -3,7 +3,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -44,9 +43,6 @@ class _WebViewScreenState extends State<WebViewScreen> {
   void initState() {
     super.initState();
     
-    // Request location permission on startup
-    _requestLocationPermission();
-
     // --- Initialize Razorpay ---
     _razorpay = Razorpay();
     _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
@@ -58,102 +54,43 @@ class _WebViewScreenState extends State<WebViewScreen> {
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0x00000000))
       ..addJavaScriptChannel(
-        'Location', // Matches the name in the web app
-        onMessageReceived: _handleLocationChannel,
-      )
-      ..addJavaScriptChannel(
         'FlutterRazorpay', // Matches the name in the web app
         onMessageReceived: _handleRazorpayChannel,
       )
       ..addJavaScriptChannel(
-        'Camera', // Matches 'Camera' channel for barcode/image capture
-        onMessageReceived: _handleCameraChannel,
-      )
-      ..addJavaScriptChannel(
-        'ImagePicker', // Matches 'ImagePicker' for gallery
-        onMessageReceived: _handleImagePickerChannel,
+        'FlutterLocation', 
+        onMessageReceived: _handleLocationChannel,
       )
       ..loadRequest(Uri.parse(_initialUrl));
   }
 
-  // --- Permission Handling ---
-  void _requestLocationPermission() async {
-    var status = await Permission.location.request();
-    if (status.isGranted) {
-      debugPrint("Location permission granted.");
-    } else if (status.isDenied) {
-      debugPrint("Location permission denied.");
-    } else if (status.isPermanentlyDenied) {
-      debugPrint("Location permission permanently denied. Opening app settings.");
-      openAppSettings();
-    }
-  }
-
-  // --- Channel Handlers ---
-
-  // Handle location requests from the web app
+    // --- Location Channel Handler ---
   void _handleLocationChannel(JavaScriptMessage message) async {
-    if (message.message == 'getUniversalLocation') {
-      // Check and request location permission
-      var status = await Permission.location.request();
-      if (status.isGranted) {
-        try {
-          Position position = await Geolocator.getCurrentPosition(
-              desiredAccuracy: LocationAccuracy.high);
-          // Success: Send location back to web app
-          _controller.runJavaScript(
-              'window.handleUniversalLocationResult(${jsonEncode({
-                'latitude': position.latitude,
-                'longitude': position.longitude
-              })})');
-        } catch (e) {
-          // Error: Send error back to web app
-          _controller.runJavaScript(
-              'window.handleUniversalLocationResult(${jsonEncode({
-                'error': e.toString()
-              })})');
-        }
-      } else {
-        // Permission Denied: Send error back to web app
-        _controller.runJavaScript(
-            'window.handleUniversalLocationResult(${jsonEncode({
-              'error': 'Location permission denied.'
-            })})');
-      }
-    } else {
-      _handleLegacyLocationChannel(message);
-    }
-  }
+    // Request location permission
+    final status = await Permission.location.request();
 
-  // Handle legacy location requests from the web app
-  void _handleLegacyLocationChannel(JavaScriptMessage message) async {
-    // Check and request location permission
-    var status = await Permission.location.request();
     if (status.isGranted) {
       try {
-        Position position = await Geolocator.getCurrentPosition(
-            desiredAccuracy: LocationAccuracy.high);
-        // Success: Send location back to web app
+        final position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high,
+        );
+        final locationData = {
+          'latitude': position.latitude,
+          'longitude': position.longitude,
+        };
+        // Send location back to the webview
         _controller.runJavaScript(
-            'window.handleLocationResult(${jsonEncode({
-              'latitude': position.latitude,
-              'longitude': position.longitude
-            })})');
+            'window.handleLocation(${jsonEncode(locationData)})');
       } catch (e) {
-        // Error: Send error back to web app
-        _controller.runJavaScript(
-            'window.handleLocationResult(${jsonEncode({
-              'error': e.toString()
-            })})');
+        // Handle location errors
+        _controller.runJavaScript('window.handleLocationError("Error getting location: $e")');
       }
     } else {
-      // Permission Denied: Send error back to web app
-      _controller.runJavaScript(
-          'window.handleLocationResult(${jsonEncode({
-            'error': 'Location permission denied.'
-          })})');
+      // Handle permission denied
+      _controller.runJavaScript('window.handleLocationError("Location permission denied")');
     }
   }
+
 
   // Handle payment requests from the web app
   void _handleRazorpayChannel(JavaScriptMessage message) {
@@ -162,52 +99,6 @@ class _WebViewScreenState extends State<WebViewScreen> {
       _razorpay.open(paymentOptions);
     } catch (e) {
       debugPrint('Error parsing Razorpay options: $e');
-    }
-  }
-
-  // Handle camera requests (for barcode scanning or taking a picture)
-  void _handleCameraChannel(JavaScriptMessage message) {
-    if (message.message == 'scanBarcode') {
-      // Here, you would navigate to a dedicated barcode scanning screen.
-      // For this example, we'll simulate it by using the image picker.
-      // In a real app, replace this with a package like `mobile_scanner`.
-      debugPrint("Barcode scan requested. Implement with a scanner package.");
-      // For now, let's just use the image picker as a placeholder.
-      _pickImage(ImageSource.camera, isBarcode: true);
-    } else if (message.message == 'takePicture') {
-      _pickImage(ImageSource.camera);
-    }
-  }
-
-  // Handle gallery image requests
-  void _handleImagePickerChannel(JavaScriptMessage message) {
-    if (message.message == 'pickImage') {
-      _pickImage(ImageSource.gallery);
-    }
-  }
-
-  Future<void> _pickImage(ImageSource source, {bool isBarcode = false}) async {
-    final ImagePicker picker = ImagePicker();
-    try {
-      final XFile? image = await picker.pickImage(source: source);
-      if (image != null) {
-        final imageBytes = await image.readAsBytes();
-        final base64Image = base64Encode(imageBytes);
-        final dataUrl = 'data:image/jpeg;base64,$base64Image';
-
-        if (isBarcode) {
-          // If you were really scanning a barcode, you would extract the
-          // barcode value from the image here before sending it back.
-          // For now, we just show a toast.
-          debugPrint("Barcode scan simulation complete.");
-          // In a real implementation, you'd call:
-          // _controller.runJavaScript('window.handleBarcodeResult("$barcodeValue")');
-        } else {
-          _controller.runJavaScript('window.handleImageResult("$dataUrl")');
-        }
-      }
-    } catch (e) {
-      debugPrint("Image picking failed: $e");
     }
   }
 
