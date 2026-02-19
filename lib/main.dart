@@ -43,6 +43,9 @@ class _WebViewScreenState extends State<WebViewScreen> {
   @override
   void initState() {
     super.initState();
+    
+    // Request location permission on startup
+    _requestLocationPermission();
 
     // --- Initialize Razorpay ---
     _razorpay = Razorpay();
@@ -71,6 +74,19 @@ class _WebViewScreenState extends State<WebViewScreen> {
         onMessageReceived: _handleImagePickerChannel,
       )
       ..loadRequest(Uri.parse(_initialUrl));
+  }
+
+  // --- Permission Handling ---
+  void _requestLocationPermission() async {
+    var status = await Permission.location.request();
+    if (status.isGranted) {
+      debugPrint("Location permission granted.");
+    } else if (status.isDenied) {
+      debugPrint("Location permission denied.");
+    } else if (status.isPermanentlyDenied) {
+      debugPrint("Location permission permanently denied. Opening app settings.");
+      openAppSettings();
+    }
   }
 
   // --- Channel Handlers ---
