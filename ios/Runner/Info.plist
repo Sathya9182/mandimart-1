@@ -13,7 +13,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>Mandi Mart</string>
+	<string>mandi_mart</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -41,26 +41,9 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-    <key>LSApplicationQueriesSchemes</key>
-    <array>
-        <string>googlepay</string>
-        <string>tez</string>
-        <string>phonepe</string>
-        <string>paytm</string>
-    </array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-	<key>NSCameraUsageDescription</key>
-    <string>This app needs camera access to scan barcodes and take pictures of bills.</string>
-    <key>NSPhotoLibraryUsageDescription</key>
-    <string>This app needs photo library access to allow you to select images of bills.</string>
-    <key>NSMicrophoneUsageDescription</key>
-    <string>This app needs microphone access for optional voice input features.</string>
-    <key>NSLocationWhenInUseUsageDescription</key>
-    <string>This app needs access to your location to provide location-based features.</string>
-    <key>NSLocationAlwaysUsageDescription</key>
-    <string>This app needs access to your location for background location features.</string>
 </dict>
 </plist>
