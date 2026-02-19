@@ -52,8 +52,6 @@ dependencies:
   razorpay_flutter: ^1.4.0
   geocoding: ^4.0.0
   package_info_plus: ^9.0.0
-  firebase_remote_config: ^6.1.4
-  firebase_core: ^4.4.0
 
 dev_dependencies:
   flutter_test:

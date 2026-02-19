@@ -8,7 +8,10 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
-void main() {
+void main() async { // Make main async
+  // Ensure that plugin services are initialized before running the app
+  WidgetsFlutterBinding.ensureInitialized();
+  
   runApp(const MyApp());
 }
 
