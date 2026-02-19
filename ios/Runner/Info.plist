@@ -49,5 +49,13 @@
     <string>This app needs location to show nearby stores.</string>
     <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
     <string>This app needs location to show nearby stores.</string>
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+        <string>tez</string>
+        <string>phonepe</string>
+        <string>paytmmp</string>
+        <string>bhim</string>
+        <string>upi</string>
+    </array>
 </dict>
 </plist>
