@@ -34,7 +34,7 @@ class WebViewScreen extends StatefulWidget {
 
 class _WebViewScreenState extends State<WebViewScreen> {
   late final WebViewController _controller;
-  late final Razorpay _razorpay;
+  late Razorpay _razorpay;
 
   // IMPORTANT: Replace this with your app's URL
   final String _initialUrl = 'https://upi-grocery-billing--studio-1348838345-ee88b.us-central1.hosted.app/';
@@ -96,6 +96,18 @@ class _WebViewScreenState extends State<WebViewScreen> {
   void _handleRazorpayChannel(JavaScriptMessage message) {
     try {
       final paymentOptions = jsonDecode(message.message) as Map<String, dynamic>;
+
+      // --- Add iOS specific options for redirection ---
+      paymentOptions['callback_url'] = 'mandimart://';
+      paymentOptions['redirect'] = true;
+
+      // Add app name to prefill for better UX on some payment apps
+      if (paymentOptions['prefill'] is Map) {
+          paymentOptions['prefill']['app_name'] = 'Mandi Mart';
+      } else {
+          paymentOptions['prefill'] = {'app_name': 'Mandi Mart'};
+      }
+
       _razorpay.open(paymentOptions);
     } catch (e) {
       debugPrint('Error parsing Razorpay options: $e');
