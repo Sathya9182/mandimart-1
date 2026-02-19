@@ -11,10 +11,19 @@ import UIKit
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
-  // Add this function to handle URL schemes
+  // This is the corrected function to handle URL schemes
   override func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey : Any] = [:]) -> Bool {
-    // You can add logic here to handle the URL, for example, to navigate to a specific screen.
-    // For now, we just return true to indicate that the URL was handled.
-    return true
+    // First, let the parent class (FlutterAppDelegate) try to handle the URL.
+    // This is what passes the URL to Flutter plugins.
+    let handled = super.application(app, open: url, options: options)
+
+    // If the parent class handled it, we're done.
+    if handled {
+        return true
+    }
+
+    // If not, you can add your own custom scheme handling here.
+    // For now, we return false as we expect Flutter to handle it.
+    return false
   }
 }
